@@ -1,2 +1,5 @@
-build/
-CMakeLists.txt
+.idea
+.vs
+.vscode/settings.json
+build
+cmake-build*

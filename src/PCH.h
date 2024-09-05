@@ -10,6 +10,9 @@ using Random = effolkronium::random_static;
 
 #include <ShlObj_core.h>
 
+#include <RE/CombatAnimation.h>
+#include <RE/CombatBehaviorContextMelee.h>
+
 using namespace std::literals;
 using namespace REL::literals;
 

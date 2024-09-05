@@ -3,6 +3,7 @@
 
 #include "RE/N/NiMath.h"
 
+#define GLM_ENABLE_EXPERIMENTAL
 #include <glm/ext.hpp>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -11,6 +12,8 @@
 #include <glm/gtx/quaternion.hpp>
 
 #include "FocusObject.h"
+
+#include "RE/bhkRigidBody.h"
 
 enum EAxis
 {
@@ -182,7 +185,7 @@ namespace Util
 	glm::vec3 GetAxisOrigin(ObjectBound& bound, EAxis axis);
 
 	RE::TESObjectREFR* GetPlayerMountRef();
-	bool IsPlayerInFirstPerson();
+	//bool IsPlayerInFirstPerson();
 
 	constexpr int FOLLOW_PARENT_MAX_RECURSION = 2;
 

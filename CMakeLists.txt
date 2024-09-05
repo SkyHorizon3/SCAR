@@ -17,6 +17,10 @@ project(
 	LANGUAGES CXX
 )
 
+#pdb
+set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /Zi")
+set(CMAKE_SHARED_LINKER_FLAGS_RELEASE "${CMAKE_SHARED_LINKER_FLAGS_RELEASE} /DEBUG /OPT:REF /OPT:ICF")
+
 # out-of-source builds only
 if(${PROJECT_SOURCE_DIR} STREQUAL ${PROJECT_BINARY_DIR})
 	message(FATAL_ERROR "In-source builds are not allowed.")
@@ -123,7 +127,7 @@ if(MSVC)
 		${PROJECT_NAME}
 		PRIVATE
 		/MP
-		/await
+		#/await
 		/W0
 		/WX
 		/permissive-
@@ -158,22 +162,36 @@ target_precompile_headers(
 )
 
 # post build event
-add_custom_command(
-	TARGET
-	${PROJECT_NAME}
-	POST_BUILD
-	COMMAND
-	powershell -NoProfile -ExecutionPolicy Bypass -File " ${CMAKE_CURRENT_SOURCE_DIR}/!Update.ps1" "COPY" "${PROJECT_VERSION}" "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/$(ConfigurationName)" "${PROJECT_NAME}" "${ANNIVERSARY_EDITION}"
-	COMMENT
-	" Updating project :))"
-)
+#add_custom_command(
+#	TARGET
+#	${PROJECT_NAME}
+#	POST_BUILD
+#	COMMAND
+#	powershell -NoProfile -ExecutionPolicy Bypass -File " ${CMAKE_CURRENT_SOURCE_DIR}/!Update.ps1" "COPY" "${PROJECT_VERSION}" "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/$(ConfigurationName)" "${PROJECT_NAME}" "${ANNIVERSARY_EDITION}"
+#	COMMENT
+#	" Updating project :))"
+#)
 
 # called via !Rebuild.ps1
-if(DEFINED GROUP)
-	set_target_properties(
-		${PROJECT_NAME}
-		PROPERTIES
-		FOLDER
-		${GROUP}
-	)
+#if(DEFINED GROUP)
+#	set_target_properties(
+#		${PROJECT_NAME}
+#		PROPERTIES
+#		FOLDER
+#		${GROUP}
+#	)
+#endif()
+
+
+# Configure MSVC-specific settings for C++23
+if(MSVC_VERSION GREATER_EQUAL 1936 AND MSVC_IDE) # 17.6+
+    file(CONFIGURE OUTPUT "${CMAKE_BINARY_DIR}/Directory.Build.props" CONTENT [==[
+    <Project>
+      <ItemDefinitionGroup>
+        <ClCompile>
+          <BuildStlModules>false</BuildStlModules>
+        </ClCompile>
+      </ItemDefinitionGroup>
+    </Project>
+    ]==] @ONLY)
 endif()

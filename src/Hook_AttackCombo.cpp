@@ -1,6 +1,10 @@
 #include "Hook_AttackCombo.h"
 #include "DataHandler.h"
 #include "Function.h"
+#include "RE/CombatBehaviorController.h"
+#include "RE/CombatBehaviorThread.h"
+#include "RE/CombatBehaviorTreeNode.h"
+#include "RE/stuff.h"
 
 namespace SCAR
 {
@@ -15,7 +19,7 @@ namespace SCAR
 	static inline bool PerformSCARAttack(RE::Actor* a_attacker, RE::Actor* a_targ, RE::hkbClipGenerator* a_clip, RE::CombatBehaviorContextMelee* a_context)
 	{
 		if (a_clip) {
-			if (a_targ && a_attacker->GetActorRuntimeData().currentProcess && !a_attacker->IsPlayerRef() && a_attacker->RequestLOS(a_targ) && AttackRangeCheck::CheckPathing(a_attacker, a_targ)) {
+			if (a_targ && a_attacker->GetActorRuntimeData().currentProcess && !a_attacker->IsPlayerRef() && RequestLOS(a_attacker, a_targ) && AttackRangeCheck::CheckPathing(a_attacker, a_targ)) {
 				DEBUG("Find SCAR Action Data in clip \"{}\" of \"{}\"", a_clip->animationName.c_str(), a_attacker->GetName());
 
 				auto dataArr = DataHandler::GetSCARActionData(a_clip);
@@ -39,7 +43,7 @@ namespace SCAR
 		auto combatTarg = actor ? actor->GetActorRuntimeData().currentCombatTarget.get() : nullptr;
 		if (actor && actor->GetActorRuntimeData().currentProcess && actor->GetActorRuntimeData().currentProcess->high && combatTarg && _strcmpi("SCAR_ComboStart", a_event->tag.c_str()) == 0 &&
 			actor->IsAttacking() && ShouldNextAttack(a_event->payload.c_str())) {
-			auto scarClip = DataHandler::GetSCARDataClip(actor);
+			auto scarClip = DataHandler::GetSCARDataClip(const_cast<RE::Actor*>(actor));
 			auto combatbehaviorCtrl = actor->GetActorRuntimeData().combatController ? actor->GetActorRuntimeData().combatController->behaviorController : nullptr;
 			if (scarClip && combatbehaviorCtrl) {
 				for (const auto thread : combatbehaviorCtrl->active_threads) {
@@ -48,7 +52,7 @@ namespace SCAR
 						if (_strcmpi(nodeName, "attack") == 0) {
 							auto context = thread->GetCurrentContext<RE::CombatBehaviorContextMelee>();
 							if (context) {
-								PerformSCARAttack(actor, combatTarg.get(), scarClip, context);
+								PerformSCARAttack(const_cast<RE::Actor*>(actor), combatTarg.get(), scarClip, context);
 								break;
 							}
 						}

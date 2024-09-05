@@ -1,6 +1,7 @@
 #include "Function.h"
 #include "DataHandler.h"
 #include "DebugAPI/DebugAPI.h"
+#include "RE/stuff.h"
 
 namespace SCAR
 {
@@ -47,10 +48,10 @@ namespace SCAR
 
 		auto localVector = invMatrix * (targPos - attackerPos);
 		auto localDistance = std::sqrtf(localVector.x * localVector.x + localVector.y * localVector.y);
-		if (localDistance <= GetMeleeWeaponRange(a_attacker) + a_target->GetBoundRadius())
+		if (localDistance <= GetMeleeWeaponRange(a_attacker) + GetBoundRadius(a_target))
 			return true;
 
-		return a_attacker->CanNavigateToPosition(a_attacker->GetPosition(), a_target->GetPosition(), 2.0f, a_attacker->GetBoundRadius());
+		return CanNavigateToPosition(a_attacker, a_attacker->GetPosition(), a_target->GetPosition(), 2.0f, GetBoundRadius(a_attacker));
 	}
 
 	bool AttackRangeCheck::WithinAttackRange(RE::Actor* a_attacker, RE::Actor* a_targ, float max_distance, float min_distance, float a_startRadian, float a_endRadian)
@@ -58,9 +59,9 @@ namespace SCAR
 		if (!a_attacker || !a_targ || !a_attacker->Get3D() || !a_targ->Get3D())
 			return false;
 
-		max_distance += a_targ->GetBoundRadius();
+		max_distance += GetBoundRadius(a_targ);
 		if (min_distance > 0.f)
-			min_distance += a_targ->GetBoundRadius() + a_attacker->GetBoundRadius();
+			min_distance += GetBoundRadius(a_targ) + GetBoundRadius(a_attacker);
 
 		auto attackerPos = a_attacker->Get3D()->world.translate;
 		auto targPos = a_targ->Is3rdPersonVisible() ? a_targ->Get3D()->world.translate : a_targ->GetPosition();
@@ -139,7 +140,7 @@ namespace SCAR
 		dataHandler->trueHUD_API->DrawArc(attackerPos, min_distance, a_startRadian, a_endRadian, matrix, 16, time, redColor);
 
 		auto axis_x = RE::NiPoint3(matrix.entry[0][0], matrix.entry[0][1], matrix.entry[0][2]), axis_y = RE::NiPoint3(matrix.entry[1][0], matrix.entry[1][1], matrix.entry[1][2]);
-		dataHandler->trueHUD_API->DrawCircle(targCenter, axis_x, axis_y, a_targ->GetBoundRadius(), 26, time, yellowColor);
+		dataHandler->trueHUD_API->DrawCircle(targCenter, axis_x, axis_y, GetBoundRadius(a_targ), 26, time, yellowColor);
 	}
 
 }

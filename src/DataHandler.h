@@ -1,6 +1,7 @@
 #pragma once
 #include "DKUtil/Config.hpp"
 #include "PrecisionAPI/PrecisionAPI.h"
+#include "RE/CombatAnimation.h"
 #include "SCARActionData.h"
 #include "TrueHUD/TrueHUDAPI.h"
 

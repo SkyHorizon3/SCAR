@@ -250,7 +250,8 @@ bool Util::GetBBCharacter(RE::TESObjectREFR* object, ObjectBound& bound)
 	if (!body)
 		return false;
 
-	auto scale = static_cast<float>(object->GetReferenceRuntimeData().refScale) / 100.f * npc->GetBaseScale();
+	const float baseScale = npc->race ? npc->race->data.height[npc->GetSex()] : 1.f;
+	auto scale = static_cast<float>(object->GetReferenceRuntimeData().refScale) / 100.f * baseScale;
 
 	bound.boundMin = NiPointToVec(object->GetBoundMin() * scale);
 	bound.boundMax = NiPointToVec(object->GetBoundMax() * scale);

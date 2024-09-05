@@ -1,6 +1,8 @@
 #include "Hook_AttackStart.h"
 #include "DataHandler.h"
 #include "Function.h"
+#include "RE/CombatBehaviorTreeUtils.h"
+#include "RE/stuff.h"
 
 namespace SCAR
 {
@@ -11,12 +13,12 @@ namespace SCAR
 			return false;
 
 		//Reproduce bethesda 's stupid cooldown timer
-		if ((RE::AITimer::QTimer() - a_context->finishedAttackTime.timeStamp <= GetGameSettingFloat("fCombatAttackAnimationDrivenDelayTime", 1.5f)) && a_attacker->IsPathing()) {
+		if ((QTimer() - a_context->finishedAttackTime.timeStamp <= GetGameSettingFloat("fCombatAttackAnimationDrivenDelayTime", 1.5f)) && IsPathing(a_attacker)) {
 			return false;
 		}
 
 		if (a_clip) {
-			if (a_targ && a_attacker->GetActorRuntimeData().currentProcess && !a_attacker->IsPlayerRef() && a_attacker->RequestLOS(a_targ) && AttackRangeCheck::CheckPathing(a_attacker, a_targ)) {
+			if (a_targ && a_attacker->GetActorRuntimeData().currentProcess && !a_attacker->IsPlayerRef() && RequestLOS(a_attacker, a_targ) && AttackRangeCheck::CheckPathing(a_attacker, a_targ)) {
 				DEBUG("Find SCAR Action Data in clip \"{}\" of \"{}\"", a_clip->animationName.c_str(), a_attacker->GetName());
 
 				auto dataArr = DataHandler::GetSCARActionData(a_clip);

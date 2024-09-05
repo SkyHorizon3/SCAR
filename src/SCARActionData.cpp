@@ -1,6 +1,7 @@
 ﻿#include "SCARActionData.h"
 #include "DataHandler.h"
 #include "Function.h"
+#include "RE/stuff.h"
 
 #undef GetObject
 
@@ -79,7 +80,7 @@ namespace SCAR
 				auto dataHandler = DataHandler::GetSingleton();
 				if (dataHandler && dataHandler->precisionPtr) {
 					auto collisionType = leftAttack ? RequestedAttackCollisionType::LeftWeapon : RequestedAttackCollisionType::RightWeapon;
-					return (dataHandler->precisionPtr->GetAttackCollisionCapsuleLength(a_attacker->GetHandle(), collisionType) + a_attacker->GetBoundRadius());
+					return (dataHandler->precisionPtr->GetAttackCollisionCapsuleLength(a_attacker->GetHandle(), collisionType) + GetBoundRadius(a_attacker));
 				} else {
 					auto obj = a_attacker->GetEquippedObject(leftAttack);
 					auto weap = obj ? obj->As<RE::TESObjectWEAP>() : nullptr;
@@ -98,7 +99,7 @@ namespace SCAR
 
 	const bool SCARActionData::IsInAttackCoolDown(RE::CombatBehaviorContextMelee::CombatAttackData* a_coolDownData) const
 	{
-		if (a_coolDownData && RE::AITimer::QTimer() - a_coolDownData->cooldown_timer.aiTimer <= a_coolDownData->cooldown_timer.timer) {
+		if (a_coolDownData && QTimer() - a_coolDownData->cooldown_timer.aiTimer <= a_coolDownData->cooldown_timer.timer) {
 			return true;
 		}
 
@@ -108,7 +109,7 @@ namespace SCAR
 	void SCARActionData::UpdateAttackCoolDown(RE::CombatBehaviorContextMelee::CombatAttackData* a_coolDownData)
 	{
 		if (a_coolDownData && a_coolDownData->attackdata) {
-			a_coolDownData->cooldown_timer.aiTimer = RE::AITimer::QTimer();
+			a_coolDownData->cooldown_timer.aiTimer = QTimer();
 			a_coolDownData->cooldown_timer.timer = coolDownTime.has_value() ? coolDownTime.value() : a_coolDownData->attackdata->data.recoveryTime;
 		}
 	}

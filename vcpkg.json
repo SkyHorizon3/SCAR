@@ -14,8 +14,12 @@
     "tomlplusplus",
     "xbyak",
     "effolkronium-random",
-    "glm"
+    "glm",
+    "directxtk",
+    "catch2"
   ],
+
+  "builtin-baseline": "1dc5ee30eb1032221d29f281f4a94b73f06b4284",
   "features": {
     "mo2-install": {
       "description": "SCAR"
