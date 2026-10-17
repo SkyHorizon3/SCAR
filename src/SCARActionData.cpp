@@ -1,9 +1,6 @@
 ﻿#include "SCARActionData.h"
 #include "DataHandler.h"
 #include "Function.h"
-#include "RE/stuff.h"
-
-#undef GetObject
 
 namespace SCAR
 {
@@ -80,7 +77,7 @@ namespace SCAR
 				auto dataHandler = DataHandler::GetSingleton();
 				if (dataHandler && dataHandler->precisionPtr) {
 					auto collisionType = leftAttack ? RequestedAttackCollisionType::LeftWeapon : RequestedAttackCollisionType::RightWeapon;
-					return (dataHandler->precisionPtr->GetAttackCollisionCapsuleLength(a_attacker->GetHandle(), collisionType) + GetBoundRadius(a_attacker));
+					return (dataHandler->precisionPtr->GetAttackCollisionCapsuleLength(a_attacker->GetHandle(), collisionType) + a_attacker->GetBoundRadius());
 				} else {
 					auto obj = a_attacker->GetEquippedObject(leftAttack);
 					auto weap = obj ? obj->As<RE::TESObjectWEAP>() : nullptr;
@@ -99,7 +96,7 @@ namespace SCAR
 
 	const bool SCARActionData::IsInAttackCoolDown(RE::CombatBehaviorContextMelee::CombatAttackData* a_coolDownData) const
 	{
-		if (a_coolDownData && QTimer() - a_coolDownData->cooldown_timer.aiTimer <= a_coolDownData->cooldown_timer.timer) {
+		if (a_coolDownData && RE::AITimer::QTimer() - a_coolDownData->cooldown_timer.aiTimer <= a_coolDownData->cooldown_timer.timer) {
 			return true;
 		}
 
@@ -109,7 +106,7 @@ namespace SCAR
 	void SCARActionData::UpdateAttackCoolDown(RE::CombatBehaviorContextMelee::CombatAttackData* a_coolDownData)
 	{
 		if (a_coolDownData && a_coolDownData->attackdata) {
-			a_coolDownData->cooldown_timer.aiTimer = QTimer();
+			a_coolDownData->cooldown_timer.aiTimer = RE::AITimer::QTimer();
 			a_coolDownData->cooldown_timer.timer = coolDownTime.has_value() ? coolDownTime.value() : a_coolDownData->attackdata->data.recoveryTime;
 		}
 	}
@@ -199,7 +196,7 @@ namespace SCAR
 			return false;
 		};
 
-		static auto GetCombatData = [this](RE::CombatBehaviorContextMelee* a_context, const std::string a_dataName) -> RE::CombatBehaviorContextMelee::CombatAttackData* {
+		static auto GetCombatData = [this](RE::CombatBehaviorContextMelee* a_context, const std::string& a_dataName) -> RE::CombatBehaviorContextMelee::CombatAttackData* {
 			for (auto& combatData : a_context->combatattackdatas) {
 				if (combatData.attackdata && _strcmpi(combatData.attackdata->event.c_str(), a_dataName.c_str()) == 0) {
 					return &combatData;
@@ -209,12 +206,13 @@ namespace SCAR
 			return nullptr;
 		};
 
+		clib_util::RNG rng;
 		const float weaponReach = weaponLength.has_value() ? weaponLength.value() * a_attacker->GetScale() : a_context->reach;
-		if (chance >= Random::get<float>(0.f, 100.f) && AttackRangeCheck::WithinAttackRange(a_attacker, a_target, maxDistance + weaponReach, minDistance, GetStartRadian(), GetEndRadian())) {
+		if (chance >= rng.generate(0.f, 100.f) && AttackRangeCheck::WithinAttackRange(a_attacker, a_target, maxDistance + weaponReach, minDistance, GetStartRadian(), GetEndRadian())) {
 			if (!IdleAnimationEditorID.empty()) {
 				auto IdleAnimation = RE::TESForm::LookupByEditorID<RE::TESIdleForm>(IdleAnimationEditorID);
 				if (!IdleAnimation) {
-					ERROR("Not Vaild Idle Animation Form Get: \"{}\"!", IdleAnimationEditorID);
+					SKSE::log::error("Not Vaild Idle Animation Form Get: \"{}\"!", IdleAnimationEditorID);
 					return false;
 				}
 
@@ -225,7 +223,7 @@ namespace SCAR
 				auto actionForm = defaultObjMgr->GetObject(actionObj);
 				auto action = actionForm ? actionForm->As<RE::BGSAction>() : nullptr;
 				if (!action) {
-					ERROR("Not Vaild Action Type Get: \"{}\"!", actionType);
+					SKSE::log::error("Not Vaild Action Type Get: \"{}\"!", actionType);
 					return false;
 				}
 
@@ -238,11 +236,11 @@ namespace SCAR
 				if (result) {
 					UpdateAttackCoolDown(coolDownData);
 
-					DEBUG("Perform SCAR Action! Name : {}, Distance: {}-{}, Angle: {}-{}, Chance: {}, Type: {}, Weight {}",
+					SKSE::log::debug("Perform SCAR Action! Name : {}, Distance: {}-{}, Angle: {}-{}, Chance: {}, Type: {}, Weight {}",
 						IdleAnimationEditorID, minDistance, maxDistance, startAngle, endAngle, chance, actionType, weight);
 					AttackRangeCheck::DrawOverlay(a_attacker, a_target, maxDistance + weaponReach, minDistance, GetStartRadian(), GetEndRadian());
 				} else
-					DEBUG("Play Idle Fail! Name : {}, Distance: {}-{}, Angle: {}-{}, Chance: {}, Type: {}, Weight {}",
+					SKSE::log::debug("Play Idle Fail! Name : {}, Distance: {}-{}, Angle: {}-{}, Chance: {}, Type: {}, Weight {}",
 						IdleAnimationEditorID, minDistance, maxDistance, startAngle, endAngle, chance, actionType, weight);
 
 				return result;
@@ -276,11 +274,11 @@ namespace SCAR
 				if (result) {
 					UpdateAttackCoolDown(coolDownData);
 
-					DEBUG("Perform SCAR Attack! Name : {}, Distance: {}-{}, Angle: {}-{}, Chance: {}, Type: {}, Weight {}",
+					SKSE::log::debug("Perform SCAR Attack! Name : {}, Distance: {}-{}, Angle: {}-{}, Chance: {}, Type: {}, Weight {}",
 						attackDataName, minDistance, maxDistance, startAngle, endAngle, chance, actionType, weight);
 					AttackRangeCheck::DrawOverlay(a_attacker, a_target, maxDistance + weaponReach, minDistance, GetStartRadian(), GetEndRadian());
 				} else {
-					DEBUG("Fail to do SCAR Attack! Name : {}, Distance: {}-{}, Angle: {}-{}, Chance: {}, Type: {}, Weight {}",
+					SKSE::log::debug("Fail to do SCAR Attack! Name : {}, Distance: {}-{}, Angle: {}-{}, Chance: {}, Type: {}, Weight {}",
 						attackDataName, minDistance, maxDistance, startAngle, endAngle, chance, actionType, weight);
 				}
 

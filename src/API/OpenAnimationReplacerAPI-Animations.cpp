@@ -1,4 +1,4 @@
-#include "OpenAnimationReplacerAPI-Animations.h"
+#include "API/OpenAnimationReplacerAPI-Animations.h"
 
 OAR_API::Animations::IAnimationsInterface* g_oarAnimationsInterface = nullptr;
 

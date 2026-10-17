@@ -1,5 +1,5 @@
 #pragma once
-#include "DebugAPI.h"
+#include "DebugAPI/DebugAPI.h"
 
 #include <windows.h>
 
@@ -170,7 +170,7 @@ void DebugAPI::DrawArc(const RE::NiPoint3& origin, float radius, float startAngl
 		lineThickness);
 
 	for (int i = 1; i <= CIRCLE_NUM_SEGMENTS; i++) {
-		auto nextPoint = GetPointOnArc(origin, radius, startAngle, radian, i, CIRCLE_NUM_SEGMENTS, matrix);
+		auto nextPoint = GetPointOnArc(origin, radius, startAngle, radian, static_cast<float>(i), CIRCLE_NUM_SEGMENTS, matrix);
 
 		DrawLineForMS(
 			Util::NiPointToVec(currentPoint),
@@ -330,7 +330,7 @@ glm::vec2 DebugAPI::WorldToScreenLoc(RE::GPtr<RE::GFxMovieView> movie, glm::vec3
 
 	uintptr_t WorldToCamMatrix = RELOCATION_ID(519579, 406126).address(), ViewPort = RELOCATION_ID(519618, 406160).address();
 
-	RE::NiCamera::WorldPtToScreenPt3((float(*)[4])(WorldToCamMatrix), *((RE::NiRect<float>*)ViewPort), niWorldLoc, screenLocOut.x, screenLocOut.y, zVal, 1e-5f);
+	RE::NiCamera::WorldPtToScreenPt3((float (*)[4])(WorldToCamMatrix), *((RE::NiRect<float>*)ViewPort), niWorldLoc, screenLocOut.x, screenLocOut.y, zVal, 1e-5f);
 	RE::GRectF rect = movie->GetVisibleFrameRect();
 
 	screenLocOut.x = rect.left + (rect.right - rect.left) * screenLocOut.x;
@@ -344,7 +344,7 @@ DebugOverlayMenu::DebugOverlayMenu()
 {
 	auto scaleformManager = RE::BSScaleformManager::GetSingleton();
 	if (!scaleformManager) {
-		ERROR("BTPS: failed to initialize DebugOverlayMenu - ScaleformManager not found");
+		SKSE::log::error("BTPS: failed to initialize DebugOverlayMenu - ScaleformManager not found");
 		return;
 	}
 
@@ -364,16 +364,16 @@ DebugOverlayMenu::DebugOverlayMenu()
 
 void DebugOverlayMenu::Register()
 {
-	INFO("BTPS: registering DebugOverlayMenu...");
+	SKSE::log::info("BTPS: registering DebugOverlayMenu...");
 
 	auto ui = RE::UI::GetSingleton();
 	if (ui) {
 		ui->Register(MENU_NAME, Creator);
 		DebugOverlayMenu::Load();
 
-		INFO("BTPS: successfully registered DebugOverlayMenu");
+		SKSE::log::info("BTPS: successfully registered DebugOverlayMenu");
 	} else {
-		ERROR("BTPS: failed to register DebugOverlayMenu");
+		SKSE::log::error("BTPS: failed to register DebugOverlayMenu");
 	}
 }
 
@@ -383,7 +383,7 @@ void DebugOverlayMenu::Load()
 	if (msgQ) {
 		msgQ->AddMessage(MENU_NAME, RE::UI_MESSAGE_TYPE::kShow, nullptr);
 	} else {
-		ERROR("BTPS: failed to show DebugOverlayMenu");
+		SKSE::log::error("BTPS: failed to show DebugOverlayMenu");
 	}
 }
 
@@ -393,7 +393,7 @@ void DebugOverlayMenu::Unload()
 	if (msgQ) {
 		msgQ->AddMessage(MENU_NAME, RE::UI_MESSAGE_TYPE::kHide, nullptr);
 	} else {
-		ERROR("BTPS: failed to hide DebugOverlayMenu");
+		SKSE::log::error("BTPS: failed to hide DebugOverlayMenu");
 	}
 }
 
@@ -445,7 +445,7 @@ void DebugAPI::CacheMenuData()
 	ScreenResY = abs(rect.top - rect.bottom);
 
 	CachedMenuData = true;
-	INFO("BTPS: DebugAPI::CacheMenuData");
+	SKSE::log::info("BTPS: DebugAPI::CacheMenuData");
 }
 
 // void DebugAPI::ClampVectorToScreen(glm::vec2& from, glm::vec2& to)

@@ -2,17 +2,20 @@
 
 namespace SCAR
 {
-	static auto MainConfig = RUNTIME_PROXY("SCAR.ini"sv);
-
 	DataHandler::Settings::Settings()
 	{
-		MainConfig.Bind(enableDebugLog, false);
-		MainConfig.Bind(enableDebugOverlay, true);
+		const auto path = std::format("Data/SKSE/Plugins/{}.ini", Plugin::NAME);
 
-		MainConfig.Load();
+		CSimpleIniA ini;
+		ini.SetUnicode();
+		ini.LoadFile(path.c_str());
 
-		PrintSettingValue(enableDebugLog);
-		PrintSettingValue(enableDebugOverlay);
+		constexpr const char* section = "Debug";
+		enableDebugLog = ini.GetBoolValue(section, "EnableDebugLog");
+		enableDebugOverlay = ini.GetBoolValue(section, "EnableDebugOverlay");
+
+		SKSE::log::info("Setting:\"{}\" is {}", "EnableDebugLog", enableDebugLog);
+		SKSE::log::info("Setting:\"{}\" is {}", "EnableDebugOverlay", enableDebugOverlay);
 	}
 
 	DataHandler::DataHandler()
@@ -54,10 +57,10 @@ namespace SCAR
 					auto actionData = j.get<SCARActionData>();
 					actionData.weight = anno.time;
 					dataArr.push_back(actionData);
-					DEBUG("Get a Action Data, Name : {}, Distance: {}-{}, Angle: {}-{}, Chance: {}, Type: {}, Weight {}",
+					SKSE::log::debug("Get a Action Data, Name : {}, Distance: {}-{}, Angle: {}-{}, Chance: {}, Type: {}, Weight {}",
 						actionData.IdleAnimationEditorID, actionData.minDistance, actionData.maxDistance, actionData.startAngle, actionData.endAngle, actionData.chance, actionData.actionType, actionData.weight);
 				} catch (json::exception& ex) {
-					ERROR("Caught an expection when convert annoation: {}", ex.what());
+					SKSE::log::error("Caught an expection when convert annoation: {}", ex.what());
 					continue;
 				}
 			}
@@ -92,9 +95,9 @@ namespace SCAR
 		RE::BSAnimationGraphManagerPtr graphMgr;
 		if (a_actor->GetAnimationGraphManager(graphMgr) && graphMgr) {
 			auto behaviourGraph = graphMgr->graphs[0] ? graphMgr->graphs[0]->behaviorGraph : nullptr;
-			auto activeNodes = behaviourGraph ? reinterpret_cast<RE::hkArray<RE::hkbNodeInfo>*>(behaviourGraph->activeNodes.get()) : nullptr;
+			auto activeNodes = behaviourGraph ? behaviourGraph->activeNodes : nullptr;
 			if (activeNodes) {
-				for (auto nodeInfo : *activeNodes) {
+				for (auto& nodeInfo : *activeNodes) {
 					auto nodeClone = nodeInfo.nodeClone;
 					if (nodeClone && nodeClone->GetClassType()) {
 						auto clipGenrator = ToClipGenerator(nodeClone);

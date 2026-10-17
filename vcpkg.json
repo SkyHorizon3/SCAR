@@ -1,28 +1,13 @@
 {
   "name": "scar",
-  "version-string": "1.0.7",
-  "description": "",
-  "license": "MIT",
+  "version-string": "2.0.1",
+  "description": "SCAR",
   "dependencies": [
-    "fast-cpp-csv-parser",
-    "fmt",
-    "rsm-binary-io",
-    "rapidcsv",
-    "spdlog",
-    "nlohmann-json",
-    "simpleini",
-    "tomlplusplus",
-    "xbyak",
-    "effolkronium-random",
+    "commonlibsse-ng",
     "glm",
-    "directxtk",
-    "catch2"
+    "nlohmann-json",
+    "clib-util",
+    "simpleini"
   ],
-
-  "builtin-baseline": "1dc5ee30eb1032221d29f281f4a94b73f06b4284",
-  "features": {
-    "mo2-install": {
-      "description": "SCAR"
-    }
-  }
+  "builtin-baseline": "eb2d3a3279fd019cb7733072d86900d0ad2a1aef"
 }

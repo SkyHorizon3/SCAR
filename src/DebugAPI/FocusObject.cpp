@@ -1,6 +1,6 @@
 #pragma once
-#include "FocusObject.h"
-#include "Util.h"
+#include "DebugAPI/FocusObject.h"
+#include "DebugAPI/Util.h"
 
 FocusObject::FocusObject(float priority, RE::TESObjectREFR* objectRef, CollisionFocusObject collisionObject)
 {
@@ -53,8 +53,7 @@ void CollisionFocusObject::SetObjectBound(ObjectBound& bb)
 void CollisionFocusObject::UpdateBound()
 {
 	ObjectBound bound;
-	if (Util::GetBoundingBox(*this, bound))
-	{
+	if (Util::GetBoundingBox(*this, bound)) {
 		BoundingBox = bound;
 	}
 }

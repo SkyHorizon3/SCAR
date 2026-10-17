@@ -13,8 +13,6 @@
 
 #include "FocusObject.h"
 
-#include "RE/bhkRigidBody.h"
-
 enum EAxis
 {
 	AxisX,

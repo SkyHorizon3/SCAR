@@ -1,7 +1,6 @@
 #pragma once
-#include "Util.h"
-#include "DebugAPI.h"
-#include "RE/RTTI.h"
+#include "DebugAPI/Util.h"
+#include "DebugAPI/DebugAPI.h"
 
 glm::highp_mat4 Util::GetRotationMatrix(glm::vec3 eulerAngles)
 {
@@ -283,11 +282,11 @@ std::string Util::GetCollisionLayer(CollisionFocusObject clObject)
 			auto havokRigidBody = static_cast<RE::hkpRigidBody*>(rigidBody->referencedObject.get());
 			if (havokRigidBody) {
 				auto collidable = havokRigidBody->GetCollidable();
-				auto clFilterInfo = collidable->broadPhaseHandle.collisionFilterInfo;
-
-				auto clLayer = clFilterInfo & 0x7f;
-
-				return std::to_string(clLayer);
+				if (collidable) {
+					auto clFilterInfo = collidable->broadPhaseHandle.collisionFilterInfo;
+					auto clLayer = clFilterInfo.filter & RE::CFilter::Flags::kLayerMask;
+					return std::to_string(clLayer);
+				}
 			}
 		}
 	}
@@ -808,7 +807,8 @@ glm::vec3 Util::VectorToEulerRotation(glm::vec3 vecIn)
 glm::vec3 Util::GetCameraPos()
 {
 	auto playerCam = RE::PlayerCamera::GetSingleton();
-	return glm::vec3(playerCam->pos.x, playerCam->pos.y, playerCam->pos.z);
+	const auto pos = playerCam->GetRuntimeData2().pos;
+	return glm::vec3(pos.x, pos.y, pos.z);
 }
 
 glm::quat Util::GetCameraRot()
@@ -916,7 +916,8 @@ void Util::ForEachReferenceInRange(RE::NiPoint3 originPos, float a_radius, std::
 		}
 	}
 
-	if (const auto skyCell = tes->worldSpace ? tes->worldSpace->skyCell : nullptr; skyCell) {
+	const auto worldSpace = tes->GetRuntimeData2().worldSpace;
+	if (const auto skyCell = worldSpace ? worldSpace->skyCell : nullptr; skyCell) {
 		Util::CellForEachReferenceInRange(skyCell, originPos, a_radius, [&](RE::TESObjectREFR& a_ref) {
 			return a_callback(a_ref);
 		});

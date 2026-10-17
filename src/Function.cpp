@@ -1,38 +1,39 @@
 #include "Function.h"
 #include "DataHandler.h"
 #include "DebugAPI/DebugAPI.h"
-#include "RE/stuff.h"
 
 namespace SCAR
 {
-	float GetGameSettingFloat(const std::string a_name, const float a_default)
+	static bool CheckStraightPath(RE::TESObjectREFR* a_ref, const RE::NiPoint3& a_startPos, RE::NiPoint3& a_endPos, float a_speed, float a_minDistance)
 	{
-		auto setting = RE::GameSettingCollection::GetSingleton()->GetSetting(a_name.c_str());
-		if (setting) {
-			return setting->GetFloat();
-		}
-
-		return a_default;
+		using func_t = decltype(&CheckStraightPath);
+		static REL::Relocation<func_t> func{ RELOCATION_ID(46050, 47314) };
+		return func(a_ref, a_startPos, a_endPos, a_speed, a_minDistance);
 	}
 
 	bool AttackRangeCheck::CheckPathing(RE::Actor* a_attacker, RE::Actor* a_target)
 	{
-		if (!a_attacker || !a_target || !a_attacker->Get3D() || !a_target->Get3D() || !a_target->GetActorRuntimeData().currentProcess || !a_attacker->GetActorRuntimeData().currentProcess)
+		if (!a_attacker || !a_target)
 			return false;
 
-		auto GetMeleeWeaponRange = [](RE::Actor* a_actor) -> float {
-			using TYPE = RE::CombatInventoryItem::TYPE;
-			float result = 0.f;
-			if (a_actor) {
-				auto combatCtrl = a_actor->GetActorRuntimeData().combatController;
-				auto combatInv = combatCtrl ? combatCtrl->inventory : nullptr;
-				if (combatInv) {
-					for (const auto item : combatInv->equippedItems) {
-						if (item.item && item.item->GetType() == TYPE::kMelee) {
-							auto range = item.item->GetMaxRange();
-							if (range > result)
-								result = range;
-						}
+		const auto& targetRuntime = a_target->GetActorRuntimeData();
+		const auto& attackerRuntime = a_attacker->GetActorRuntimeData();
+		const auto target3D = a_target->Get3D();
+		const auto attacker3D = a_attacker->Get3D();
+		if (!attacker3D || !target3D || !targetRuntime.currentProcess || !attackerRuntime.currentProcess)
+			return false;
+
+		constexpr auto GetMeleeWeaponRange = [](const RE::Actor::ACTOR_RUNTIME_DATA& a_actorRuntime) -> float {
+			float result = 0.0f;
+
+			auto combatCtrl = a_actorRuntime.combatController;
+			auto combatInv = combatCtrl ? combatCtrl->inventory : nullptr;
+			if (combatInv) {
+				for (const auto& item : combatInv->equippedItems) {
+					if (item.item && item.item->GetType() == RE::CombatInventoryItem::TYPE::kMelee) {
+						auto range = item.item->GetMaxRange();
+						if (range > result)
+							result = range;
 					}
 				}
 			}
@@ -40,18 +41,18 @@ namespace SCAR
 			return result;
 		};
 
-		auto attackerPos = a_attacker->Get3D()->world.translate;
-		auto targPos = a_target->Is3rdPersonVisible() ? a_target->Get3D()->world.translate : a_target->GetPosition();
-		auto matrix = a_attacker->Get3D()->world.rotate;
+		auto attackerPos = attacker3D->world.translate;
+		auto targPos = a_target->Is3rdPersonVisible() ? target3D->world.translate : a_target->GetPosition();
+		auto matrix = attacker3D->world.rotate;
 
 		RE::NiMatrix3 invMatrix = matrix.Transpose();
 
 		auto localVector = invMatrix * (targPos - attackerPos);
 		auto localDistance = std::sqrtf(localVector.x * localVector.x + localVector.y * localVector.y);
-		if (localDistance <= GetMeleeWeaponRange(a_attacker) + GetBoundRadius(a_target))
+		if (localDistance <= GetMeleeWeaponRange(attackerRuntime) + a_target->GetBoundRadius())
 			return true;
 
-		return CanNavigateToPosition(a_attacker, a_attacker->GetPosition(), a_target->GetPosition(), 2.0f, GetBoundRadius(a_attacker));
+		return CheckStraightPath(a_attacker, a_attacker->GetPosition(), a_target->data.location, 2.0f, a_attacker->GetBoundRadius());
 	}
 
 	bool AttackRangeCheck::WithinAttackRange(RE::Actor* a_attacker, RE::Actor* a_targ, float max_distance, float min_distance, float a_startRadian, float a_endRadian)
@@ -59,9 +60,9 @@ namespace SCAR
 		if (!a_attacker || !a_targ || !a_attacker->Get3D() || !a_targ->Get3D())
 			return false;
 
-		max_distance += GetBoundRadius(a_targ);
+		max_distance += a_targ->GetBoundRadius();
 		if (min_distance > 0.f)
-			min_distance += GetBoundRadius(a_targ) + GetBoundRadius(a_attacker);
+			min_distance += a_targ->GetBoundRadius() + a_attacker->GetBoundRadius();
 
 		auto attackerPos = a_attacker->Get3D()->world.translate;
 		auto targPos = a_targ->Is3rdPersonVisible() ? a_targ->Get3D()->world.translate : a_targ->GetPosition();
@@ -101,10 +102,10 @@ namespace SCAR
 
 		auto localDistance = std::sqrtf(localVector.x * localVector.x + localVector.y * localVector.y);
 		auto localAngle = std::atan2f(localVector.x, localVector.y);
-		if (localAngle < -std::numbers::pi)
-			localAngle += 2 * std::numbers::pi;
-		else if (localAngle > std::numbers::pi)
-			localAngle -= 2 * std::numbers::pi;
+		if (localAngle < -RE::NI_PI)
+			localAngle += 2 * RE::NI_PI;
+		else if (localAngle > RE::NI_PI)
+			localAngle -= 2 * RE::NI_PI;
 
 		const bool withInAngle = a_startRadian < a_endRadian ? localAngle >= a_startRadian && localAngle <= a_endRadian : !(localAngle >= a_endRadian && localAngle <= a_startRadian);
 
@@ -114,16 +115,16 @@ namespace SCAR
 	void AttackRangeCheck::DrawOverlay(RE::Actor* a_attacker, RE::Actor* a_targ, float max_distance, float min_distance, float a_startRadian, float a_endRadian)
 	{
 		auto dataHandler = DataHandler::GetSingleton();
-		if (!dataHandler || !dataHandler->settings || !dataHandler->settings->enableDebugOverlay.get_data() || REL::Module::IsVR() || !dataHandler->trueHUD_API)
+		if (!dataHandler || !dataHandler->settings || !dataHandler->settings->enableDebugOverlay || REL::Module::IsVR() || !dataHandler->trueHUD_API)
 			return;
 
 		if (!a_attacker || !a_targ || !a_attacker->Get3D() || !a_targ->Get3D())
 			return;
 
-		static constexpr float time = 1.f;
-		static constexpr uint32_t redColor = 0xFF0000FF;
-		static constexpr uint32_t greenColor = 0x00FF00FF;
-		static constexpr uint32_t yellowColor = 0xFFFF00FF;
+		constexpr float time = 1.f;
+		constexpr uint32_t redColor = 0xFF0000FF;
+		constexpr uint32_t greenColor = 0x00FF00FF;
+		constexpr uint32_t yellowColor = 0xFFFF00FF;
 
 		auto attackerPos = a_attacker->Get3D()->world.translate;
 		auto targPos = a_targ->Is3rdPersonVisible() ? a_targ->Get3D()->world.translate : a_targ->GetPosition();
@@ -140,7 +141,7 @@ namespace SCAR
 		dataHandler->trueHUD_API->DrawArc(attackerPos, min_distance, a_startRadian, a_endRadian, matrix, 16, time, redColor);
 
 		auto axis_x = RE::NiPoint3(matrix.entry[0][0], matrix.entry[0][1], matrix.entry[0][2]), axis_y = RE::NiPoint3(matrix.entry[1][0], matrix.entry[1][1], matrix.entry[1][2]);
-		dataHandler->trueHUD_API->DrawCircle(targCenter, axis_x, axis_y, GetBoundRadius(a_targ), 26, time, yellowColor);
+		dataHandler->trueHUD_API->DrawCircle(targCenter, axis_x, axis_y, a_targ->GetBoundRadius(), 26, time, yellowColor);
 	}
 
 }

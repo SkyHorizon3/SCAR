@@ -1,27 +1,26 @@
 #include "LoadGame.h"
 
-DLLEXPORT constinit auto SKSEPlugin_Version = []() noexcept {
-	SKSE::PluginVersionData data{};
+#define DLLEXPORT __declspec(dllexport)
 
-	data.PluginVersion(Plugin::Version);
-	data.PluginName(Plugin::NAME);
-	data.AuthorName(Plugin::AUTHOR);
-	data.UsesAddressLibrary(true);
-	data.HasNoStructUse(true);
-
-	return data;
+SKSE_PLUGIN_VERSION = []() {
+	SKSE::PluginVersionData v;
+	v.PluginName(Plugin::NAME);
+	v.PluginVersion(Plugin::VERSION);
+	v.AuthorName("Maxsu and SkyHorizon"sv);
+	v.UsesAddressLibrary();
+	v.UsesNoStructs();
+	return v;
 }();
 
-DLLEXPORT bool SKSEAPI SKSEPlugin_Query(const SKSE::QueryInterface*, SKSE::PluginInfo* pluginInfo)
+SKSE_PLUGIN_QUERY(const SKSE::QueryInterface*, SKSE::PluginInfo* pluginInfo)
 {
 	pluginInfo->name = SKSEPlugin_Version.pluginName;
 	pluginInfo->infoVersion = SKSE::PluginInfo::kVersion;
 	pluginInfo->version = SKSEPlugin_Version.pluginVersion;
-
 	return true;
 }
 
-DLLEXPORT bool SKSEAPI SKSEPlugin_Load(const SKSE::LoadInterface* a_skse)
+SKSE_PLUGIN_LOAD(const SKSE::LoadInterface* skse)
 {
 	/*
 #ifndef NDEBUG
@@ -31,20 +30,12 @@ DLLEXPORT bool SKSEAPI SKSEPlugin_Load(const SKSE::LoadInterface* a_skse)
 #endif
 	*/
 
-	DKUtil::Logger::Init(Plugin::NAME, REL::Module::get().version().string());
+	spdlog::set_pattern("[%H:%M:%S:%e] [%l] %v"s);
 
-	SKSE::Init(a_skse);
+	SKSE::log::info("Game version: {}", skse->RuntimeVersion());
 
-	INFO("{} v{} loaded", Plugin::NAME, Plugin::Version);
-
-	// do stuff
-	auto g_message = SKSE::GetMessagingInterface();
-	if (!g_message) {
-		ERROR("Messaging Interface Not Found!");
-		return false;
-	}
-
-	g_message->RegisterListener(SCAR::EventCallback);
+	auto messaging = SKSE::GetMessagingInterface();
+	messaging->RegisterListener(SCAR::EventCallback);
 
 	return true;
 }
